@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Inventory Manager</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <span class="brand-mark">IM</span>
+          <div>
+            <h1>Inventory Manager</h1>
+            <p>Stock and price control</p>
+          </div>
+        </div>
+
+        <nav class="nav-tabs" aria-label="Views">
+          <button class="nav-tab active" data-view="dashboard" type="button">
+            <span aria-hidden="true">▦</span>
+            Dashboard
+          </button>
+          <button class="nav-tab" data-view="products" type="button">
+            <span aria-hidden="true">▤</span>
+            Products
+          </button>
+          <button class="nav-tab" data-view="settings" type="button">
+            <span aria-hidden="true">⚙</span>
+            Rules
+          </button>
+        </nav>
+
+        <section class="sidebar-panel">
+          <h2>Pricing Strategy</h2>
+          <p id="strategySummary"></p>
+        </section>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Ecommerce operations</p>
+            <h2 id="viewTitle">Dashboard</h2>
+          </div>
+          <div class="topbar-actions">
+            <button class="icon-button" id="seedButton" type="button" title="Load sample products" aria-label="Load sample products">＋</button>
+            <button class="icon-button" id="exportButton" type="button" title="Export CSV" aria-label="Export CSV">⇩</button>
+            <label class="icon-button file-button" title="Import CSV" aria-label="Import CSV">
+              ⇧
+              <input id="importInput" type="file" accept=".csv,text/csv">
+            </label>
+          </div>
+        </header>
+
+        <section id="dashboardView" class="view active-view">
+          <div class="metric-grid">
+            <article class="metric">
+              <span>Total SKUs</span>
+              <strong id="totalSkus">0</strong>
+            </article>
+            <article class="metric">
+              <span>Inventory Value</span>
+              <strong id="inventoryValue">$0</strong>
+            </article>
+            <article class="metric warning">
+              <span>Low Stock</span>
+              <strong id="lowStockCount">0</strong>
+            </article>
+            <article class="metric">
+              <span>Expected Profit</span>
+              <strong id="expectedProfit">$0</strong>
+            </article>
+          </div>
+
+          <div class="work-grid">
+            <section class="panel">
+              <div class="panel-header">
+                <h3>Pricing Queue</h3>
+                <button class="secondary-button" id="applyAllPrices" type="button">Apply All</button>
+              </div>
+              <div id="pricingQueue" class="queue-list"></div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-header">
+                <h3>Reorder Alerts</h3>
+              </div>
+              <div id="reorderList" class="queue-list"></div>
+            </section>
+          </div>
+        </section>
+
+        <section id="productsView" class="view">
+          <section class="panel product-editor">
+            <div class="panel-header">
+              <h3>Add or Update Product</h3>
+              <button class="secondary-button" id="clearForm" type="button">Clear</button>
+            </div>
+            <form id="productForm" class="product-form">
+              <input id="editingSku" type="hidden">
+              <label>
+                SKU
+                <input id="sku" required placeholder="TEE-BLK-M">
+              </label>
+              <label>
+                Product name
+                <input id="name" required placeholder="Black cotton t-shirt">
+              </label>
+              <label>
+                Category
+                <input id="category" placeholder="Apparel">
+              </label>
+              <label>
+                Cost
+                <input id="cost" required type="number" min="0" step="0.01" placeholder="8.50">
+              </label>
+              <label>
+                Current price
+                <input id="price" required type="number" min="0" step="0.01" placeholder="19.99">
+              </label>
+              <label>
+                Competitor price
+                <input id="competitor" type="number" min="0" step="0.01" placeholder="21.99">
+              </label>
+              <label>
+                Stock
+                <input id="stock" required type="number" min="0" step="1" placeholder="40">
+              </label>
+              <label>
+                Reorder point
+                <input id="reorderPoint" required type="number" min="0" step="1" placeholder="12">
+              </label>
+              <label>
+                Target margin %
+                <input id="targetMargin" type="number" min="1" max="95" step="1" placeholder="35">
+              </label>
+              <button class="primary-button" type="submit">Save Product</button>
+            </form>
+          </section>
+
+          <section class="panel">
+            <div class="panel-header table-tools">
+              <h3>Product Catalog</h3>
+              <input id="searchProducts" placeholder="Search products">
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>SKU</th>
+                    <th>Product</th>
+                    <th>Stock</th>
+                    <th>Cost</th>
+                    <th>Price</th>
+                    <th>Suggested</th>
+                    <th>Status</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="productRows"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <section id="settingsView" class="view">
+          <section class="panel rules-panel">
+            <div class="panel-header">
+              <h3>Auto Price Rules</h3>
+              <button class="primary-button" id="saveRules" type="button">Save Rules</button>
+            </div>
+            <div class="rules-grid">
+              <label>
+                Default margin %
+                <input id="defaultMargin" type="number" min="1" max="95" step="1">
+              </label>
+              <label>
+                Marketplace fee %
+                <input id="marketplaceFee" type="number" min="0" max="80" step="0.1">
+              </label>
+              <label>
+                Shipping per item
+                <input id="shippingCost" type="number" min="0" step="0.01">
+              </label>
+              <label>
+                Minimum profit
+                <input id="minimumProfit" type="number" min="0" step="0.01">
+              </label>
+              <label>
+                Undercut competitor by %
+                <input id="undercutPercent" type="number" min="0" max="50" step="0.1">
+              </label>
+              <label>
+                Price ending
+                <select id="priceEnding">
+                  <option value=".99">.99</option>
+                  <option value=".95">.95</option>
+                  <option value=".00">.00</option>
+                  <option value="none">No rounding</option>
+                </select>
+              </label>
+            </div>
+            <p class="rule-note">
+              Suggested price uses the higher of margin price and minimum profit price, then compares against competitor price when available.
+            </p>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>

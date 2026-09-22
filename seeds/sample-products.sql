@@ -1,0 +1,1 @@
+-- Sample inventory rows will be inserted here.
