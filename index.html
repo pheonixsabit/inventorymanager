@@ -26,6 +26,10 @@
             <span aria-hidden="true">▤</span>
             Products
           </button>
+          <button class="nav-tab" data-view="product-master" type="button">
+            <span aria-hidden="true">◆</span>
+            Product Master
+          </button>
           <button class="nav-tab" data-view="settings" type="button">
             <span aria-hidden="true">⚙</span>
             Rules
@@ -62,7 +66,7 @@
             </article>
             <article class="metric">
               <span>Inventory Value</span>
-              <strong id="inventoryValue">$0</strong>
+              <strong id="inventoryValue">৳0.00</strong>
             </article>
             <article class="metric warning">
               <span>Low Stock</span>
@@ -70,7 +74,7 @@
             </article>
             <article class="metric">
               <span>Expected Profit</span>
-              <strong id="expectedProfit">$0</strong>
+              <strong id="expectedProfit">৳0.00</strong>
             </article>
           </div>
 
@@ -162,6 +166,37 @@
                 <tbody id="productRows"></tbody>
               </table>
             </div>
+          </section>
+        </section>
+
+        <section id="product-masterView" class="view">
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <h3>Product Master</h3>
+                <p class="rule-note">Define one physical product and its sellable variants.</p>
+              </div>
+              <button class="secondary-button" id="clearMasterForm" type="button">Clear</button>
+            </div>
+            <form id="productMasterForm" class="product-form">
+              <input id="masterEditingCode" type="hidden">
+              <label>Product code<input id="masterProductCode" required placeholder="IPHONE-HARD-SHELL"></label>
+              <label>Product name<input id="masterName" required placeholder="iPhone Hard Shell Case"></label>
+              <label>Brand<input id="masterBrand" placeholder="Jin yiheng"></label>
+              <label>Category<input id="masterCategory" placeholder="Phone Accessories"></label>
+              <label>Product type<select id="masterProductType"><option value="physical">Physical</option><option value="digital">Digital</option><option value="service">Service</option></select></label>
+              <label class="wide-field">Description<textarea id="masterDescription" rows="2" placeholder="Product description"></textarea></label>
+              <div class="wide-field variant-editor">
+                <div class="panel-header compact-header"><h3>Variants</h3><button class="secondary-button" id="addVariant" type="button">Add variant</button></div>
+                <div id="variantRows" class="variant-rows"></div>
+              </div>
+              <button class="primary-button" type="submit">Save Product Master</button>
+            </form>
+          </section>
+
+          <section class="panel">
+            <div class="panel-header table-tools"><h3>Product Master Catalog</h3><input id="searchMasters" placeholder="Search master products"></div>
+            <div class="table-wrap"><table><thead><tr><th>Product</th><th>Brand</th><th>Category</th><th>Type</th><th>Variants</th><th>Stock</th><th></th></tr></thead><tbody id="masterRows"></tbody></table></div>
           </section>
         </section>
 

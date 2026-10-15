@@ -26,8 +26,13 @@ body {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
+}
+
+textarea {
+  resize: vertical;
 }
 
 .app-shell {
@@ -304,6 +309,43 @@ select {
   align-self: end;
 }
 
+.wide-field {
+  grid-column: 1 / -1;
+}
+
+.compact-header {
+  margin-bottom: 10px;
+}
+
+.variant-rows {
+  display: grid;
+  gap: 10px;
+}
+
+.variant-row {
+  display: grid;
+  grid-template-columns: 1.2fr 1.2fr 0.8fr 0.8fr 0.8fr auto;
+  gap: 8px;
+  align-items: end;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfc;
+}
+
+.variant-row label {
+  min-width: 0;
+}
+
+.variant-row .remove-variant {
+  height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--accent);
+  cursor: pointer;
+}
+
 .table-tools input {
   max-width: 280px;
 }
@@ -386,6 +428,10 @@ th {
   .rules-grid {
     grid-template-columns: 1fr 1fr;
   }
+
+  .variant-row {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
 }
 
 @media (max-width: 640px) {
@@ -403,7 +449,8 @@ th {
   .metric-grid,
   .work-grid,
   .product-form,
-  .rules-grid {
+  .rules-grid,
+  .variant-row {
     grid-template-columns: 1fr;
   }
 

@@ -44,12 +44,14 @@ const sampleProducts = [
 ];
 
 let products = [];
+let productMasters = [];
 let rules = defaultRules;
 let activeView = "dashboard";
 
-const currency = new Intl.NumberFormat("en-US", {
+const currency = new Intl.NumberFormat("en-BD", {
   style: "currency",
-  currency: "USD"
+  currency: "BDT",
+  currencyDisplay: "narrowSymbol"
 });
 
 const elements = {
@@ -66,7 +68,11 @@ const elements = {
   productRows: document.querySelector("#productRows"),
   searchProducts: document.querySelector("#searchProducts"),
   importInput: document.querySelector("#importInput"),
-  applyAllPrices: document.querySelector("#applyAllPrices")
+  applyAllPrices: document.querySelector("#applyAllPrices"),
+  productMasterForm: document.querySelector("#productMasterForm"),
+  variantRows: document.querySelector("#variantRows"),
+  masterRows: document.querySelector("#masterRows"),
+  searchMasters: document.querySelector("#searchMasters")
 };
 
 const fields = [
@@ -99,6 +105,10 @@ document.querySelector("#seedButton").addEventListener("click", async () => {
 document.querySelector("#exportButton").addEventListener("click", exportCsv);
 document.querySelector("#clearForm").addEventListener("click", resetForm);
 document.querySelector("#saveRules").addEventListener("click", saveRulesFromForm);
+document.querySelector("#clearMasterForm").addEventListener("click", resetMasterForm);
+document.querySelector("#addVariant").addEventListener("click", () => addVariantRow());
+elements.productMasterForm.addEventListener("submit", saveProductMasterFromForm);
+elements.searchMasters.addEventListener("input", renderProductMasters);
 elements.applyAllPrices.addEventListener("click", applyAllSuggestedPrices);
 elements.importInput.addEventListener("change", importCsv);
 elements.searchProducts.addEventListener("input", renderProducts);
@@ -131,12 +141,14 @@ async function apiRequest(path, options = {}) {
 }
 
 async function loadState() {
-  const [productsResponse, rulesResponse] = await Promise.all([
+  const [productsResponse, rulesResponse, mastersResponse] = await Promise.all([
     apiRequest("/api/products"),
-    apiRequest("/api/pricing-rules")
+    apiRequest("/api/pricing-rules"),
+    apiRequest("/api/product-master")
   ]);
   products = productsResponse.data;
   rules = rulesResponse.data;
+  productMasters = mastersResponse.data;
   render();
 }
 
@@ -193,6 +205,7 @@ function render() {
   renderRulesForm();
   renderDashboard();
   renderProducts();
+  renderProductMasters();
 }
 
 function renderRulesForm() {
@@ -283,6 +296,114 @@ function renderProducts() {
   document.querySelectorAll("[data-delete]").forEach((button) => {
     button.addEventListener("click", () => deleteProduct(button.dataset.delete));
   });
+}
+
+function renderProductMasters() {
+  const search = elements.searchMasters.value.trim().toLowerCase();
+  const visibleMasters = productMasters.filter((master) =>
+    `${master.productCode} ${master.name} ${master.brand} ${master.category}`.toLowerCase().includes(search)
+  );
+
+  elements.masterRows.innerHTML = visibleMasters.length
+    ? visibleMasters.map((master) => {
+      const stock = master.variants.reduce((total, variant) => total + number(variant.inventory?.onHand), 0);
+      return `<tr>
+        <td><strong>${escapeHtml(master.name)}</strong><br><small>${escapeHtml(master.productCode)}</small></td>
+        <td>${escapeHtml(master.brand || "-")}</td>
+        <td>${escapeHtml(master.category || "-")}</td>
+        <td>${escapeHtml(master.productType)}</td>
+        <td>${master.variants.length}</td>
+        <td>${stock}</td>
+        <td><button type="button" class="secondary-button" data-edit-master="${escapeHtml(master.productCode)}">Edit</button></td>
+      </tr>`;
+    }).join("")
+    : `<tr><td colspan="7" class="empty-state">No product masters found.</td></tr>`;
+
+  document.querySelectorAll("[data-edit-master]").forEach((button) => {
+    button.addEventListener("click", () => editProductMaster(button.dataset.editMaster));
+  });
+}
+
+function addVariantRow(variant = {}) {
+  const price = variant.sellingPrices?.[0]?.price ?? "";
+  const cost = variant.costs?.reduce((total, item) => total + number(item.amount), 0) || "";
+  const inventory = variant.inventory || {};
+  const row = document.createElement("div");
+  row.className = "variant-row";
+  row.innerHTML = `
+    <label>Variant name<input data-field="variantName" required value="${escapeHtml(variant.variantName || "")}" placeholder="Cherry Red with Lens Film"></label>
+    <label>SKU<input data-field="sku" required value="${escapeHtml(variant.sku || "")}" placeholder="IPHONE-HARD-RED"></label>
+    <label>Stock<input data-field="onHand" type="number" min="0" step="1" value="${inventory.onHand ?? 0}"></label>
+    <label>Reorder point<input data-field="reorderPoint" type="number" min="0" step="1" value="${inventory.reorderPoint ?? 0}"></label>
+    <label>Cost (BDT)<input data-field="cost" type="number" min="0" step="0.01" value="${cost}"></label>
+    <label>Price (BDT)<input data-field="price" type="number" min="0" step="0.01" value="${price}"></label>
+    <label>Color / attribute<input data-field="color" value="${escapeHtml(variant.attributes?.color || "")}" placeholder="Cherry Red"></label>
+    <button class="remove-variant" type="button" title="Remove variant" aria-label="Remove variant">×</button>
+  `;
+  row.querySelector(".remove-variant").addEventListener("click", () => {
+    if (elements.variantRows.children.length > 1) row.remove();
+  });
+  elements.variantRows.append(row);
+}
+
+function readProductMasterForm() {
+  const variants = [...elements.variantRows.children].map((row) => {
+    const value = (field) => row.querySelector(`[data-field="${field}"]`).value.trim();
+    const price = number(value("price"));
+    return {
+      sku: value("sku"),
+      variantName: value("variantName"),
+      attributes: { color: value("color") },
+      barcode: "",
+      unit: "piece",
+      costs: [{ componentType: "purchase", name: "Base cost", amount: number(value("cost")), currency: "BDT" }],
+      inventory: { onHand: Math.max(0, Math.round(number(value("onHand")))), reserved: 0, reorderPoint: Math.max(0, Math.round(number(value("reorderPoint")))) },
+      sellingPrices: price > 0 ? [{ channel: "default", price, currency: "BDT" }] : []
+    };
+  });
+
+  return {
+    productCode: document.querySelector("#masterProductCode").value.trim(),
+    name: document.querySelector("#masterName").value.trim(),
+    brand: document.querySelector("#masterBrand").value.trim(),
+    category: document.querySelector("#masterCategory").value.trim(),
+    productType: document.querySelector("#masterProductType").value,
+    description: document.querySelector("#masterDescription").value.trim(),
+    status: "active",
+    variants
+  };
+}
+
+async function saveProductMasterFromForm(event) {
+  event.preventDefault();
+  const product = readProductMasterForm();
+  const editingCode = document.querySelector("#masterEditingCode").value;
+  const path = editingCode ? `/api/product-master/${encodeURIComponent(editingCode)}` : "/api/product-master";
+  await apiRequest(path, { method: editingCode ? "PUT" : "POST", body: product });
+  resetMasterForm();
+  await loadState();
+}
+
+function editProductMaster(productCode) {
+  const master = productMasters.find((item) => item.productCode === productCode);
+  if (!master) return;
+  document.querySelector("#masterEditingCode").value = master.productCode;
+  document.querySelector("#masterProductCode").value = master.productCode;
+  document.querySelector("#masterName").value = master.name;
+  document.querySelector("#masterBrand").value = master.brand;
+  document.querySelector("#masterCategory").value = master.category;
+  document.querySelector("#masterProductType").value = master.productType;
+  document.querySelector("#masterDescription").value = master.description;
+  elements.variantRows.replaceChildren();
+  master.variants.forEach(addVariantRow);
+  switchView("product-master");
+}
+
+function resetMasterForm() {
+  elements.productMasterForm.reset();
+  document.querySelector("#masterEditingCode").value = "";
+  elements.variantRows.replaceChildren();
+  addVariantRow();
 }
 
 function readProductForm() {
@@ -425,6 +546,7 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
+addVariantRow();
 loadState().catch((error) => {
   document.querySelector(".main").prepend(Object.assign(document.createElement("p"), {
     className: "empty-state",

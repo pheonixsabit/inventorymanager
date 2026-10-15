@@ -1,5 +1,6 @@
 import { runMigrations } from "../src/db/migrations.js";
 import { upsertProduct } from "../src/modules/products/products.service.js";
+import { upsertProductMaster } from "../src/modules/product-master/product-master.service.js";
 
 runMigrations();
 
@@ -38,5 +39,30 @@ runMigrations();
 		targetMargin: 40
 	}
 ].forEach(upsertProduct);
+
+upsertProductMaster({
+	productCode: "IPHONE-HARD-SHELL",
+	name: "iPhone Hard Shell Case",
+	category: "Phone Accessories",
+	brand: "Jin yiheng",
+	productType: "physical",
+	description: "Hard shell phone case with lens film, anti-fingerprint, anti-fall and heat dissipation features.",
+	status: "active",
+	variants: [
+		["Cherry Red", "IPHONE-HARD-RED", 18],
+		["Sky Blue", "IPHONE-HARD-BLUE", 22],
+		["Xingyu Orange", "IPHONE-HARD-ORANGE", 15],
+		["Elegant Silver", "IPHONE-HARD-SILVER", 12]
+	].map(([variantName, sku, onHand]) => ({
+		sku,
+		variantName: `${variantName} with Lens Film`,
+		attributes: { color: variantName, feature: "Lens Film" },
+		barcode: "",
+		unit: "piece",
+		costs: [{ componentType: "purchase", name: "Supplier cost", amount: 180, currency: "BDT" }],
+		inventory: { onHand, reserved: 0, reorderPoint: 5 },
+		sellingPrices: [{ channel: "default", price: 399, compareAt: 449, currency: "BDT" }]
+	}))
+});
 
 console.log("Sample products seeded.");
